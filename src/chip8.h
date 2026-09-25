@@ -5,6 +5,7 @@
 constexpr u16 CHIP8_STACK_SIZE = 64;
 constexpr u16 CHIP8_MEMORY_SIZE = 4096;
 constexpr u16 CHIP8_NUM_REGISTERS = 16;
+constexpr u16 CHIP8_PC_INIT = 0x200;
 
 constexpr u8 CHIP8_INITIAL_FONT[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -47,3 +48,5 @@ void chip8_destroy(Chip8* chip8);
 
 void chip8_reset(Chip8* chip);
 void chip8_cpu_reset(Chip8_CPU cpu);
+
+u16 chip8_fetch(const Chip8* chip);

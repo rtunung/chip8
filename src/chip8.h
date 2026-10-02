@@ -6,6 +6,10 @@ constexpr u16 CHIP8_STACK_SIZE = 64;
 constexpr u16 CHIP8_MEMORY_SIZE = 4096;
 constexpr u16 CHIP8_NUM_REGISTERS = 16;
 constexpr u16 CHIP8_PC_INIT = 0x200;
+constexpr u16 CHIP8_DISPLAY_WIDTH = 64;
+constexpr u16 CHIP8_DISPLAY_HEIGHT = 32;
+constexpr u16 CHIP8_DISPLAY_PIXELS = CHIP8_DISPLAY_WIDTH * CHIP8_DISPLAY_HEIGHT;
+constexpr u16 CHIP8_KEYBOARD_SIZE = 16;
 
 constexpr u8 CHIP8_INITIAL_FONT[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -26,27 +30,32 @@ constexpr u8 CHIP8_INITIAL_FONT[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
 
-typedef struct
+typedef struct Chip8_CPU_Data
 {
     u16 PC; // Program Counter
     u16  I; // Index Register
-    u16 StackPointer; // Do we need this?
+    i16 SP; // Stack Pointer
     u16 Stack[CHIP8_STACK_SIZE]; // The stack
     u8 V[CHIP8_NUM_REGISTERS]; // 16 General Purpose Registers
     u8 Delay_Timer; // Delay Timer
     u8 Sound_Timer; // Sound Timer
 } Chip8_CPU;
 
-typedef struct
+typedef struct Chip8_Data
 {
     Chip8_CPU cpu;
     u8 memory[CHIP8_MEMORY_SIZE];
+    bool display[CHIP8_DISPLAY_PIXELS];
+    bool keyboard[CHIP8_KEYBOARD_SIZE];
 } Chip8;
 
 Chip8* chip8_create();
-void chip8_destroy(Chip8* chip8);
+void chip8_destroy(Chip8* chip);
 
 void chip8_reset(Chip8* chip);
 void chip8_cpu_reset(Chip8_CPU cpu);
 
 u16 chip8_fetch(const Chip8* chip);
+
+bool chip8_cycle(Chip8* chip);
+bool chip8_handle_opcode(Chip8* chip, u16 opcode);

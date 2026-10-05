@@ -30,8 +30,9 @@ constexpr u8 CHIP8_INITIAL_FONT[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
 
-typedef struct Chip8_CPU_Data
+typedef struct Chip8_Data
 {
+    // CPU
     u16 PC; // Program Counter
     u16  I; // Index Register
     i16 SP; // Stack Pointer
@@ -39,11 +40,8 @@ typedef struct Chip8_CPU_Data
     u8 V[CHIP8_NUM_REGISTERS]; // 16 General Purpose Registers
     u8 Delay_Timer; // Delay Timer
     u8 Sound_Timer; // Sound Timer
-} Chip8_CPU;
 
-typedef struct Chip8_Data
-{
-    Chip8_CPU cpu;
+    // Peripherals
     u8 memory[CHIP8_MEMORY_SIZE];
     bool display[CHIP8_DISPLAY_PIXELS];
     bool keyboard[CHIP8_KEYBOARD_SIZE];
@@ -53,7 +51,6 @@ Chip8* chip8_create();
 void chip8_destroy(Chip8* chip);
 
 void chip8_reset(Chip8* chip);
-void chip8_cpu_reset(Chip8_CPU cpu);
 
 u16 chip8_fetch(const Chip8* chip);
 

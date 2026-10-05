@@ -16,7 +16,7 @@ static void test_cpu_reset(void)
     Chip8 *chip = chip8_create();
     chip8_reset(chip);
 
-    TEST_ASSERT_EQUAL(chip->cpu.PC, CHIP8_PC_INIT);
+    TEST_ASSERT_EQUAL(chip->PC, CHIP8_PC_INIT);
     TEST_ASSERT_EQUAL_CHAR_ARRAY(chip->memory + 0x050, CHIP8_INITIAL_FONT, 80);
 
     chip8_destroy(chip);

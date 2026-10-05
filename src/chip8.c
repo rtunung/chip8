@@ -189,6 +189,34 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             }
         } break;
 
+        case 0x9: // 9XY0 -> if (V[X] != V[Y])
+        {
+            const u8 reg1 = (opcode & 0x0F00) >> 8;
+            const u8 reg2 = (opcode & 0x00F0) >> 4;
+            if (chip->V[reg1] != chip->V[reg2]) {}
+            chip->PC += 2;
+        } break;
+
+        case 0xA: // ANNN -> I = NNN
+        {
+            const u8 nnn = opcode & 0x0FFF;
+            chip->I = nnn;
+        } break;
+
+        case 0xB: // BNNN -> I = NNN + V[0]
+        {
+            const u8 NNN = opcode & 0x0FFF;
+            chip->I = chip->V[0] + NNN;
+        } break;
+
+        case 0xC: // CXNN -> V[X] = rand() & NN
+        {
+            const u8 random = rand();
+            const u8 reg = (opcode & 0x0F00) >> 8;
+            const u8 NN = opcode & 0x00FF;
+            chip->V[reg] = random & NN;
+        } break;
+
         default:
             printf("Error: unknown opcode\n");
             return false;

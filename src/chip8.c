@@ -1,6 +1,7 @@
 
 #include "chip8.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -120,6 +121,61 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 reg = (opcode & 0x0F00) >> 8;
             const u8 val = (opcode & 0x00FF);
             chip->cpu.V[reg] += val;
+        }
+
+        case 0x8: // 8XYZ
+        {
+            const u8 x= (opcode & 0x0F00) >> 8;
+            const u8 y = (opcode & 0x00F0) >> 4;
+            const u8 operation = opcode & 0x000F;
+            switch (operation) {
+                case 0x0: // V[X] = V[Y]
+                    chip->cpu.V[x] = chip->cpu.V[y];
+                    break;
+                case 0x1: // V[X] |= V[Y]
+                    chip->cpu.V[x] |= chip->cpu.V[y];
+                    break;
+                case 0x2: // V[X] &= V[Y]
+                    chip->cpu.V[x] &= chip->cpu.V[y];
+                    break;
+                case 0x3: // V[X] ^= V[Y]
+                    chip->cpu.V[x] ^= chip->cpu.V[y];
+                    break;
+                case 0x4: // V[X] += V[Y]
+                    if ((u16)chip->cpu.V[x] + (u16)chip->cpu.V[y] > 0xFF)
+                        chip->cpu.V[0xF] = 1;
+                    else
+                        chip->cpu.V[0xF] = 0;
+                    chip->cpu.V[x] += chip->cpu.V[y];
+                    break;
+                case 0x5: // V[X] -= V[Y]
+                    if ((i16)chip->cpu.V[x] - (i16)chip->cpu.V[y] < 0)
+                        chip->cpu.V[0xF] = 0;
+                    else
+                        chip->cpu.V[0xF] = 1;
+                    break;
+                    chip->cpu.V[x] -= chip->cpu.V[y];
+                case 0x6: // V[X] >>= 1
+                    const u8 last_bit = chip->cpu.V[x] & 0x01;
+                    chip->cpu.V[x] >>= 1;
+                    chip->cpu.V[0xF] = last_bit;
+                    break;
+                case 0x7: // V[X] = V[Y] - V[X]
+                    if ((i16)chip->cpu.V[y] - (i16)chip->cpu.V[x] < 0)
+                        chip->cpu.V[0xF] = 0;
+                    else
+                        chip->cpu.V[0xF] = 1;
+                    break;
+                    chip->cpu.V[x] = chip->cpu.V[y] - chip->cpu.V[x];
+                    break;
+                case 0xE: // V[x] <<= 1
+                    const u8 first_bit = (chip->cpu.V[x] & 80) >> 7;
+                    chip->cpu.V[x] <<= 1;
+                    chip->cpu.V[0xF] = first_bit;
+                default:
+                    printf("Error: opcode does not exist\n");
+                    return false;
+            }
         }
 
         default:

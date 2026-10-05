@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #include "types.h"
 
 constexpr u16 CHIP8_STACK_SIZE = 64;
@@ -55,4 +57,5 @@ void chip8_reset(Chip8* chip);
 u16 chip8_fetch(const Chip8* chip);
 
 bool chip8_cycle(Chip8* chip);
+bool chip8_cycle_n(Chip8* chip, size_t n);
 bool chip8_handle_opcode(Chip8* chip, u16 opcode);

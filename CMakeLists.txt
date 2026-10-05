@@ -36,7 +36,6 @@ target_link_libraries(chip8
 
 # ------------------------
 # Tests
-
 # ------------------------
 
 FetchContent_MakeAvailable(unity)
@@ -44,6 +43,7 @@ FetchContent_MakeAvailable(unity)
 add_executable(chip8_test
     src/chip8.c
     tests/test_chip8.c
+    tests/test_helper.c
 )
 
 target_include_directories(chip8_test

@@ -41,6 +41,16 @@ bool chip8_cycle(Chip8* chip) {
     return chip8_handle_opcode(chip, opcode);
 }
 
+bool chip8_cycle_n(Chip8* chip, size_t cycles)
+{
+    for (size_t i = 0; i < cycles; i++) {
+        const bool result = chip8_cycle(chip);
+        if (!result)
+            return false;
+    }
+    return true;
+}
+
 bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
 
     const u8 first = (opcode & 0xF000) >> 12;

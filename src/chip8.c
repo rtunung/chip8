@@ -37,6 +37,7 @@ bool chip8_cycle(Chip8* chip) {
     }
 
     const u16 opcode = chip8_fetch(chip);
+    chip->PC += 2;
     return chip8_handle_opcode(chip, opcode);
 }
 
@@ -91,7 +92,7 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 val = opcode & 0x00FF;
             if (chip->V[reg] == val)
                 chip->PC += 2;
-        }
+        } break;
 
         case 0x4: // 4XNN -> if (V[X] != NN)
         {
@@ -99,7 +100,7 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 val = opcode & 0x00FF;
             if (chip->V[reg] != val)
                 chip->PC += 2;
-        }
+        } break;
 
         case 0x5: // 5XY0 -> if (V[X] == V[Y])
         {
@@ -107,21 +108,21 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 reg2 = (opcode & 0x00F0) >> 4;
             if (chip->V[reg1] == chip->V[reg2]) {}
                 chip->PC += 2;
-        }
+        } break;
 
         case 0x6: // 6XNN -> V[X] = NN
         {
             const u8 reg = (opcode & 0x0F00) >> 8;
             const u8 val = (opcode & 0x00FF);
             chip->V[reg] = val;
-        }
+        } break;
 
         case 0x7: // 7XNN -> V[X] += NN
         {
             const u8 reg = (opcode & 0x0F00) >> 8;
             const u8 val = (opcode & 0x00FF);
             chip->V[reg] += val;
-        }
+        } break;
 
         case 0x8: // 8XYZ
         {
@@ -153,8 +154,8 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                         chip->V[0xF] = 0;
                     else
                         chip->V[0xF] = 1;
-                    break;
                     chip->V[x] -= chip->V[y];
+                    break;
                 case 0x6: // V[X] >>= 1
                     const u8 last_bit = chip->V[x] & 0x01;
                     chip->V[x] >>= 1;
@@ -165,18 +166,18 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                         chip->V[0xF] = 0;
                     else
                         chip->V[0xF] = 1;
-                    break;
                     chip->V[x] = chip->V[y] - chip->V[x];
                     break;
                 case 0xE: // V[x] <<= 1
                     const u8 first_bit = (chip->V[x] & 80) >> 7;
                     chip->V[x] <<= 1;
                     chip->V[0xF] = first_bit;
+                    break;
                 default:
                     printf("Error: opcode does not exist\n");
                     return false;
             }
-        }
+        } break;
 
         default:
             printf("Error: unknown opcode\n");

@@ -108,6 +108,7 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             if (Chip8_Debug_Enabled)
                 printf("Goto -> 0x%.3X", address);
 
+            // If we hard jump to the current jump instruction, we halt the cpu.
             if (address == chip->PC - 2) {
                 chip->is_halted = true;
                 if (Chip8_Debug_Enabled)
@@ -159,7 +160,7 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
         {
             const u8 reg1 = (opcode & 0x0F00) >> 8;
             const u8 reg2 = (opcode & 0x00F0) >> 4;
-            if (chip->V[reg1] == chip->V[reg2]) {}
+            if (chip->V[reg1] == chip->V[reg2])
                 chip->PC += 2;
 
             if (Chip8_Debug_Enabled)
@@ -264,8 +265,8 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
         {
             const u8 reg1 = (opcode & 0x0F00) >> 8;
             const u8 reg2 = (opcode & 0x00F0) >> 4;
-            if (chip->V[reg1] != chip->V[reg2]) {}
-            chip->PC += 2;
+            if (chip->V[reg1] != chip->V[reg2])
+                chip->PC += 2;
 
             if (Chip8_Debug_Enabled)
                 printf("If V[%.1X] != V[%.1X] | V[%.1X] = 0x%.1X, V[%.1X] = 0x%.1X", reg1, reg2, reg1, chip->V[reg1], reg2, chip->V[reg2]);
@@ -308,6 +309,7 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 y = chip->V[y_reg];
             const u8 n = opcode & 0x000F;
             chip8_draw_sprite(chip, x, y, n);;
+
             if (Chip8_Debug_Enabled)
                 printf("Draw Sprite xPos = V[%.1X] yPos = V[%.1X] height = 0x%.1X ", x_reg, y_reg, n);
         } break;

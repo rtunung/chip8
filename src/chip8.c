@@ -273,7 +273,7 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
 
         case 0xA: // ANNN -> I = NNN
         {
-            const u8 nnn = opcode & 0x0FFF;
+            const u16 nnn = opcode & 0x0FFF;
             chip->I = nnn;
 
             if (Chip8_Debug_Enabled)
@@ -282,7 +282,7 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
 
         case 0xB: // BNNN -> I = NNN + V[0]
         {
-            const u8 NNN = opcode & 0x0FFF;
+            const u16 NNN = opcode & 0x0FFF;
             chip->I = chip->V[0] + NNN;
 
             if (Chip8_Debug_Enabled)

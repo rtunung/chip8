@@ -215,20 +215,28 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                         printf("Xor V[%.1X] ^= V[%.1X]", x, y);
                     break;
                 case 0x4: // V[X] += V[Y]
-                    if ((u16)chip->V[x] + (u16)chip->V[y] > 0xFF)
+                    const int add_total = (int)chip->V[x] + (int)chip->V[y];
+                    chip->V[x] += chip->V[y];
+
+                    if (add_total > 0xFF)
                         chip->V[0xF] = 1;
                     else
                         chip->V[0xF] = 0;
-                    chip->V[x] += chip->V[y];
+
                     if (Chip8_Debug_Enabled)
                         printf("Add V[%.1X] += V[%.1X]", x, y);
                     break;
                 case 0x5: // V[X] -= V[Y]
+                    const u8 result = chip->V[x] - chip->V[y];
+
                     if ((i16)chip->V[x] - (i16)chip->V[y] < 0)
                         chip->V[0xF] = 0;
                     else
                         chip->V[0xF] = 1;
-                    chip->V[x] -= chip->V[y];
+
+                    if (x != 0xF)
+                        chip->V[x] = result;
+
                     if (Chip8_Debug_Enabled)
                         printf("Minus V[%.1X] -= V[%.1X]", x, y);
                     break;
@@ -240,16 +248,19 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                         printf("Shift Right V[%.1X] >>= 1", x);
                     break;
                 case 0x7: // V[X] = V[Y] - V[X]
-                    if ((i16)chip->V[y] - (i16)chip->V[x] < 0)
+                    const int sub_total = (int)chip->V[y] - (int)chip->V[x];
+                    chip->V[x] = chip->V[y] - chip->V[x];
+
+                    if (sub_total < 0)
                         chip->V[0xF] = 0;
                     else
                         chip->V[0xF] = 1;
-                    chip->V[x] = chip->V[y] - chip->V[x];
+
                     if (Chip8_Debug_Enabled)
                         printf("Minus V[%.1X] = V[%.1X] - V[%.1X]", x, y, x);
                     break;
                 case 0xE: // V[x] <<= 1
-                    const u8 first_bit = (chip->V[x] & 80) >> 7;
+                    const u8 first_bit = (chip->V[x] & 0x80) >> 7;
                     chip->V[x] <<= 1;
                     chip->V[0xF] = first_bit;
                     if (Chip8_Debug_Enabled)

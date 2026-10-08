@@ -21,7 +21,7 @@ void chip8_destroy(Chip8* chip)
 void chip8_reset(Chip8* chip) {
     memset(chip, 0, sizeof(Chip8));
     chip->PC = CHIP8_PC_INIT; // Programs are loaded at position 0x200 into memory
-    memcpy(chip->memory + 0x050, CHIP8_INITIAL_FONT, 80); // Load font into memory
+    memcpy(chip->memory + CHIP8_INITIAL_FONT_LOCATION, CHIP8_INITIAL_FONT, 80); // Load font into memory
 }
 
 u16 chip8_fetch(const Chip8 *chip) {
@@ -49,6 +49,13 @@ bool chip8_cycle_n(Chip8* chip, size_t cycles)
             return false;
     }
     return true;
+}
+
+void chip8_tick_timers(Chip8* chip) {
+    if (chip->sound_timer > 0)
+        chip->sound_timer--;
+    if (chip->delay_timer > 0)
+        chip->delay_timer--;
 }
 
 bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
@@ -217,10 +224,117 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             chip->V[reg] = random & NN;
         } break;
 
+        case 0xD: // DXYN -> draw_sprite(V[X], V[Y], N)
+        {
+            const u8 x = chip->V[(opcode & 0x0F00) >> 8];
+            const u8 y = chip->V[(opcode & 0x00F0) >> 4];
+            const u8 n = opcode & 0x000F;
+            chip8_draw_sprite(chip, x, y, n);;
+        } break;
+
+        case 0xE:
+        {
+            const u8 last_byte = opcode & 0x00FF;
+            const u8 reg = (opcode & 0x0F00) >> 8;
+
+            const u8 key = chip->V[reg];
+            if (key > 16)
+                break;
+
+            switch (last_byte) {
+                case 0x9E: // EX9E -> if (key() == V[X])
+                    if (chip->keyboard[key])
+                        chip->PC += 2;
+                    break;
+
+                case 0xA1: // EXA1 -> if (key() != V[X])
+                    if (!chip->keyboard[key])
+                        chip->PC += 2;
+                    break;
+
+                default:
+                    printf("Error: invalid opcode\n");
+                    return false;
+            }
+        } break;
+
+        case 0xF:
+        {
+            const u8 reg = (opcode & 0x0F00) >> 8;
+            const u8 last_byte = opcode & 0x00FF;
+
+            switch (last_byte) {
+                case 0x15: // FX15 -> delay_timer(V[X])
+                    chip->delay_timer = chip->V[reg];
+                    break;
+
+                case 0x18: // FX18 -> sound_timer(V[X])
+                    chip->sound_timer = chip->V[reg];
+                    break;
+
+                case 0x1E: // FX1E -> I += V[X]
+                    chip->I += chip->V[reg];
+                    break;
+
+                case 0x29: // FX29 -> I = sprite_addr(V[X])
+                    const u8 char_requested = chip->V[reg] & 0x0F;
+                    const size_t location = char_requested  * 5 + CHIP8_INITIAL_FONT_LOCATION;
+                    chip->I = location;
+                    break;
+
+                case 0x33: // FX33 -> MEM[I] = BCD(V[X])
+                    u8 value = chip->V[reg];
+                    for (size_t i = 0; i < 3; i++)
+                    {
+                        chip->memory[chip->I + 2 - i] = value % 10;
+                        value /= 10;
+                    }
+                    break;
+
+                case 0x55: // FX55 -> reg_dump(V[X], &I)
+                    memcpy(chip->memory + chip->I, chip->V, reg + 1);
+                    break;
+
+                case 0x65: // FX65 -> ref_load(V[X], &I)
+                    memcpy(chip->V, chip->memory + chip->I, reg + 1);
+                    break;
+
+                default:
+                    printf("Error: invalid opcode\n");
+                    return false;
+            }
+        } break;
+
         default:
             printf("Error: unknown opcode\n");
             return false;
     }
 
     return true;
+}
+
+void chip8_draw_sprite(Chip8* chip, const u8 x, const u8 y, const u8 n)
+{
+    bool pixel_flipped = false;
+
+    for (int row = 0; row < n; row++)
+    {
+        const u8 current_row = chip->memory[chip->I + row];
+        for (int col = 0; col < 8; col++)
+        {
+            const bool current_pixel = (current_row >> (7 - col)) & 0x1;
+
+            const size_t x_pos = (x + col) % CHIP8_DISPLAY_WIDTH;
+            const size_t y_pos = (y + row) % CHIP8_DISPLAY_HEIGHT;
+            const size_t position = x_pos + y_pos * CHIP8_DISPLAY_WIDTH;
+
+            const bool previous_pixel = chip->display[position];
+            chip->display[position] ^= current_pixel;
+
+            if (previous_pixel && current_pixel == false)
+                pixel_flipped = true;
+        }
+    }
+
+    chip->V[0xF] = pixel_flipped;
 }

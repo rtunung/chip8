@@ -48,7 +48,12 @@ typedef struct Chip8_Data
     u8 memory[CHIP8_MEMORY_SIZE];
     bool display[CHIP8_DISPLAY_PIXELS];
     bool keyboard[CHIP8_KEYBOARD_SIZE];
+
+    bool is_halted;
 } Chip8;
+
+extern bool Chip8_Debug_Enabled;
+//void chip8_print_debug_info(Chip8* chip, u16 opcode, char* message);
 
 Chip8* chip8_create();
 void chip8_destroy(Chip8* chip);

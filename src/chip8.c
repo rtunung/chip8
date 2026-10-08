@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+bool Chip8_Debug_Enabled = false;
+
+
 Chip8* chip8_create()
 {
     Chip8* chip = malloc(sizeof(Chip8));
@@ -31,6 +34,9 @@ u16 chip8_fetch(const Chip8 *chip) {
 }
 
 bool chip8_cycle(Chip8* chip) {
+    if (chip->is_halted)
+        return true;
+
     if (chip->PC >= CHIP8_MEMORY_SIZE) {
         printf("Error: PC points out of bounds.\n");
         return false;
@@ -62,15 +68,24 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
 
     const u8 first = (opcode & 0xF000) >> 12;
 
+    if (Chip8_Debug_Enabled)
+        printf("PC: 0x%X Opcode: 0x%.4X | ", chip->PC - 2, opcode);
+
     switch (first) {
         case 0x0: // diverse cases
         {
             switch (opcode) {
                 case 0x00E0: // Clear Display
+                    if (Chip8_Debug_Enabled)
+                        printf("Clear Display");
+
                     memset(chip->display, 0x0, CHIP8_DISPLAY_PIXELS * sizeof(bool));
                     break;
                 case 0x00EE: // return
                 {
+                    if (Chip8_Debug_Enabled)
+                        printf("Return -> 0x%.4X", chip->Stack[chip->SP]);
+
                     if (chip->SP <= 0) {
                         printf("Error: empty stack\n");
                         return false;
@@ -79,6 +94,8 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                     chip->PC = chip->Stack[chip->SP];
                 } break;
                 default: // 0NNN: machine routine on address NNN
+                    if (Chip8_Debug_Enabled)
+                        printf("Machine Routine");
                     printf("Error: not implemented\n");
                     return false;
             }
@@ -87,6 +104,16 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
         case 0x1: // 1NNN -> goto NNN
         {
             const u16 address = opcode & 0x0FFF;
+
+            if (Chip8_Debug_Enabled)
+                printf("Goto -> 0x%.3X", address);
+
+            if (address == chip->PC - 2) {
+                chip->is_halted = true;
+                if (Chip8_Debug_Enabled)
+                    printf("\nHALT");
+            }
+
             chip->PC = address;
         } break;
 
@@ -101,6 +128,9 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             chip->Stack[chip->SP] = chip->PC;
             chip->SP++;
             chip->PC = address;
+
+            if (Chip8_Debug_Enabled)
+                printf("Call subroutine -> 0x%.3X", address);
         } break;
 
         case 0x3: // 3XNN -> if (V[X] == NN)
@@ -109,6 +139,9 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 val = opcode & 0x00FF;
             if (chip->V[reg] == val)
                 chip->PC += 2;
+
+            if (Chip8_Debug_Enabled)
+                printf("If V[%.1X] == 0x%.2X | V[%.1X] = 0x%.1X", reg, val, reg, chip->V[reg]);
         } break;
 
         case 0x4: // 4XNN -> if (V[X] != NN)
@@ -117,6 +150,9 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 val = opcode & 0x00FF;
             if (chip->V[reg] != val)
                 chip->PC += 2;
+
+            if (Chip8_Debug_Enabled)
+                printf("If V[%.1X] != 0x%.2X | V[%.1X] = 0x%.1X", reg, val, reg, chip->V[reg]);
         } break;
 
         case 0x5: // 5XY0 -> if (V[X] == V[Y])
@@ -125,6 +161,9 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 reg2 = (opcode & 0x00F0) >> 4;
             if (chip->V[reg1] == chip->V[reg2]) {}
                 chip->PC += 2;
+
+            if (Chip8_Debug_Enabled)
+                printf("If V[%.1X] == V[%.1X] | V[%.1X] = 0x%.1X, V[%.1X] = 0x%.1X", reg1, reg2, reg1, chip->V[reg1], reg2, chip->V[reg2]);
         } break;
 
         case 0x6: // 6XNN -> V[X] = NN
@@ -132,6 +171,9 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 reg = (opcode & 0x0F00) >> 8;
             const u8 val = (opcode & 0x00FF);
             chip->V[reg] = val;
+
+            if (Chip8_Debug_Enabled)
+                printf("Set V[%.1X] = 0x%.2X", reg, val);
         } break;
 
         case 0x7: // 7XNN -> V[X] += NN
@@ -139,6 +181,9 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 reg = (opcode & 0x0F00) >> 8;
             const u8 val = (opcode & 0x00FF);
             chip->V[reg] += val;
+
+            if (Chip8_Debug_Enabled)
+                printf("Add V[%.1X] += %.2X", reg, val);
         } break;
 
         case 0x8: // 8XYZ
@@ -146,18 +191,27 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 x= (opcode & 0x0F00) >> 8;
             const u8 y = (opcode & 0x00F0) >> 4;
             const u8 operation = opcode & 0x000F;
+
             switch (operation) {
                 case 0x0: // V[X] = V[Y]
                     chip->V[x] = chip->V[y];
+                    if (Chip8_Debug_Enabled)
+                        printf("Set V[%.1X] = V[%.1X]", x, y);
                     break;
                 case 0x1: // V[X] |= V[Y]
                     chip->V[x] |= chip->V[y];
+                    if (Chip8_Debug_Enabled)
+                        printf("Or V[%.1X] |= V[%.1X]", x, y);
                     break;
                 case 0x2: // V[X] &= V[Y]
                     chip->V[x] &= chip->V[y];
+                    if (Chip8_Debug_Enabled)
+                        printf("And V[%.1X] &= V[%.1X]", x, y);
                     break;
                 case 0x3: // V[X] ^= V[Y]
                     chip->V[x] ^= chip->V[y];
+                    if (Chip8_Debug_Enabled)
+                        printf("Xor V[%.1X] ^= V[%.1X]", x, y);
                     break;
                 case 0x4: // V[X] += V[Y]
                     if ((u16)chip->V[x] + (u16)chip->V[y] > 0xFF)
@@ -165,6 +219,8 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                     else
                         chip->V[0xF] = 0;
                     chip->V[x] += chip->V[y];
+                    if (Chip8_Debug_Enabled)
+                        printf("Add V[%.1X] += V[%.1X]", x, y);
                     break;
                 case 0x5: // V[X] -= V[Y]
                     if ((i16)chip->V[x] - (i16)chip->V[y] < 0)
@@ -172,11 +228,15 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                     else
                         chip->V[0xF] = 1;
                     chip->V[x] -= chip->V[y];
+                    if (Chip8_Debug_Enabled)
+                        printf("Minus V[%.1X] -= V[%.1X]", x, y);
                     break;
                 case 0x6: // V[X] >>= 1
                     const u8 last_bit = chip->V[x] & 0x01;
                     chip->V[x] >>= 1;
                     chip->V[0xF] = last_bit;
+                    if (Chip8_Debug_Enabled)
+                        printf("Shift Right V[%.1X] >>= 1", x);
                     break;
                 case 0x7: // V[X] = V[Y] - V[X]
                     if ((i16)chip->V[y] - (i16)chip->V[x] < 0)
@@ -184,11 +244,15 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                     else
                         chip->V[0xF] = 1;
                     chip->V[x] = chip->V[y] - chip->V[x];
+                    if (Chip8_Debug_Enabled)
+                        printf("Minus V[%.1X] = V[%.1X] - V[%.1X]", x, y, x);
                     break;
                 case 0xE: // V[x] <<= 1
                     const u8 first_bit = (chip->V[x] & 80) >> 7;
                     chip->V[x] <<= 1;
                     chip->V[0xF] = first_bit;
+                    if (Chip8_Debug_Enabled)
+                        printf("Shift Left V[%.1X] <<= 1", x);
                     break;
                 default:
                     printf("Error: opcode does not exist\n");
@@ -202,18 +266,27 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 reg2 = (opcode & 0x00F0) >> 4;
             if (chip->V[reg1] != chip->V[reg2]) {}
             chip->PC += 2;
+
+            if (Chip8_Debug_Enabled)
+                printf("If V[%.1X] != V[%.1X] | V[%.1X] = 0x%.1X, V[%.1X] = 0x%.1X", reg1, reg2, reg1, chip->V[reg1], reg2, chip->V[reg2]);
         } break;
 
         case 0xA: // ANNN -> I = NNN
         {
             const u8 nnn = opcode & 0x0FFF;
             chip->I = nnn;
+
+            if (Chip8_Debug_Enabled)
+                printf("Set I = 0x%.3X", nnn);
         } break;
 
         case 0xB: // BNNN -> I = NNN + V[0]
         {
             const u8 NNN = opcode & 0x0FFF;
             chip->I = chip->V[0] + NNN;
+
+            if (Chip8_Debug_Enabled)
+                printf("Add I = 0x%.3X V[0]", NNN);
         } break;
 
         case 0xC: // CXNN -> V[X] = rand() & NN
@@ -222,14 +295,21 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             const u8 reg = (opcode & 0x0F00) >> 8;
             const u8 NN = opcode & 0x00FF;
             chip->V[reg] = random & NN;
+
+            if (Chip8_Debug_Enabled)
+                printf("Set V[%.1X] = rand() & 0x%.2X", reg, NN);
         } break;
 
         case 0xD: // DXYN -> draw_sprite(V[X], V[Y], N)
         {
-            const u8 x = chip->V[(opcode & 0x0F00) >> 8];
-            const u8 y = chip->V[(opcode & 0x00F0) >> 4];
+            const u8 x_reg = (opcode & 0x0F00) >> 8;
+            const u8 y_reg = (opcode & 0x00F0) >> 4;
+            const u8 x = chip->V[x_reg];
+            const u8 y = chip->V[y_reg];
             const u8 n = opcode & 0x000F;
             chip8_draw_sprite(chip, x, y, n);;
+            if (Chip8_Debug_Enabled)
+                printf("Draw Sprite xPos = V[%.1X] yPos = V[%.1X] height = 0x%.1X ", x_reg, y_reg, n);
         } break;
 
         case 0xE:
@@ -309,6 +389,9 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
             printf("Error: unknown opcode\n");
             return false;
     }
+
+    if (Chip8_Debug_Enabled)
+        printf("\n");
 
     return true;
 }

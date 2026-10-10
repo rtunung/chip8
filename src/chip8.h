@@ -53,7 +53,7 @@ typedef struct Chip8_Data
 } Chip8;
 
 extern bool Chip8_Debug_Enabled;
-//void chip8_print_debug_info(Chip8* chip, u16 opcode, char* message);
+void chip8_print_debug_info(const Chip8* chip, u16 opcode);
 
 Chip8* chip8_create();
 void chip8_destroy(Chip8* chip);

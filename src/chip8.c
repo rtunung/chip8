@@ -199,7 +199,7 @@ void chip8_print_debug_info(const Chip8* chip, u16 opcode) {
                     printf("Set V[%.1X] = delay_timer", X);
                     break;
 
-                case 0x08: // V[X] = get_key() IMPORTANT! Halts the cpu until key is pressed!
+                case 0x0A: // V[X] = get_key() IMPORTANT! Halts the cpu until key is pressed!
                         printf("Waiting for keyboard V[%.1X] = current_key_press()", X);
                     break;
 
@@ -438,21 +438,22 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
                     chip->V[X] = chip->delay_timer;
                     break;
 
-                case 0x08: // V[X] = get_key() IMPORTANT! Halts the cpu until key is pressed!
-                    bool found_key = false;
-                    u8 key = 0xFF;
-                    for (int i = 0; i < CHIP8_KEYBOARD_SIZE; i++)
-                        if (chip->keyboard[i]) {
-                            found_key = true;
-                            key = i;
+                case 0x0A: // V[X] = get_key() IMPORTANT! Halts the cpu until key is pressed!
+
+                    if (chip->currently_holding_key && !chip->keyboard[chip->currently_held_key]) {
+                            chip->currently_holding_key = false;
+                            break;
+                    }
+
+                    for (int key = 0; key < CHIP8_KEYBOARD_SIZE; key++)
+                        if (chip->keyboard[key]) {
+                            chip->V[X] = key;
+                            chip->currently_held_key = key;
+                            chip->currently_holding_key = true;
                             break;
                         }
 
-                    if (found_key)
-                        chip->V[X] = key;
-                    else {
-                        chip->PC -= 2;
-                    }
+                    chip->PC -= 2;
                     break;
 
                 case 0x15: // FX15 -> delay_timer(V[X])

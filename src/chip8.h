@@ -50,6 +50,8 @@ typedef struct Chip8_Data
     bool keyboard[CHIP8_KEYBOARD_SIZE];
 
     bool is_halted;
+    u8 currently_held_key;
+    bool currently_holding_key;
 } Chip8;
 
 extern bool Chip8_Debug_Enabled;

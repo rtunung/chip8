@@ -85,14 +85,27 @@ int main(const int argc, char** argv)
     SDL_Event event;
     while(is_running)
     {
-
         // Handle Events
         while(SDL_PollEvent(&event))
         {
             if(event.type == SDL_EVENT_QUIT)
                 is_running = false;
+        }
 
-            // TODO handle all 16 input keys
+        // Handle Keyboard
+        int num_keys = 0;
+        const bool* keyboard = SDL_GetKeyboardState(&num_keys);
+        constexpr SDL_Scancode keyboard_scancodes[16] = {
+            SDL_SCANCODE_0, SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4, SDL_SCANCODE_5,
+            SDL_SCANCODE_6, SDL_SCANCODE_7, SDL_SCANCODE_8, SDL_SCANCODE_9, SDL_SCANCODE_A, SDL_SCANCODE_B,
+            SDL_SCANCODE_C, SDL_SCANCODE_D, SDL_SCANCODE_E, SDL_SCANCODE_F
+        };
+        memset(chip->keyboard, false, sizeof(bool) * 16);
+        for (int i = 0; i < 16; i++) {
+            if (keyboard_scancodes[i] >= num_keys)
+                continue;
+            if (keyboard[keyboard_scancodes[i]])
+                chip->keyboard[i] = true;
         }
 
         // Handle elapsed time

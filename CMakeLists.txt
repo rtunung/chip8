@@ -24,6 +24,7 @@ find_package(SDL3 CONFIG REQUIRED)
 add_executable(chip8
     src/main.c
     src/chip8.c
+    src/audio.c
 )
 
 target_include_directories(chip8

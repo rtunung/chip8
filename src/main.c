@@ -1,8 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <SDL3/SDL.h>
 
 #include "chip8.h"
+#include "audio.h"
 
 static constexpr int DISPLAY_SCALE_FACTOR = 8;
 static constexpr int DISPLAY_WIDTH = CHIP8_DISPLAY_WIDTH * DISPLAY_SCALE_FACTOR;
@@ -54,7 +56,7 @@ int main(const int argc, char** argv)
 {
 
     // Setup SDL
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
     SDL_Window* window = SDL_CreateWindow("CHIP-8", DISPLAY_WIDTH, DISPLAY_HEIGHT, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
 
@@ -69,7 +71,7 @@ int main(const int argc, char** argv)
 
     if (argc >= 2)
         if (!load_rom(argv[1], chip)) {
-            printf("Shutting down...\n");
+            SDL_Quit();
             return 1;
         }
 
@@ -79,6 +81,13 @@ int main(const int argc, char** argv)
 
     auto previous = SDL_GetPerformanceCounter();
     const double frequency = (double)SDL_GetPerformanceFrequency();
+
+    // Setup Audio
+    chip8_beep *beep = malloc(sizeof(chip8_beep));
+    if (!beep_init(beep)) {
+        SDL_Quit();
+        return 1;
+    }
 
     // Main Loop
     bool is_running = true;
@@ -120,6 +129,7 @@ int main(const int argc, char** argv)
         constexpr double timer_period = 1.0 / TIMER_HZ;
         while (timer_accumulator >= timer_period) {
             chip8_tick_timers(chip);
+            beep->playing = chip->sound_timer > 0;
             timer_accumulator -= timer_period;
         }
 
@@ -137,6 +147,10 @@ int main(const int argc, char** argv)
         SDL_RenderPresent(renderer);
 
     }
+
+    beep_destroy(beep);
+    free(beep);
+    chip8_destroy(chip);
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

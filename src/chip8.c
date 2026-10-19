@@ -476,8 +476,7 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
 
                 case 0x33: // FX33 -> MEM[I] = BCD(V[X])
                     u8 value = chip->V[X];
-                    for (size_t i = 0; i < 3; i++)
-                    {
+                    for (size_t i = 0; i < 3; i++) {
                         chip->memory[chip->I + 2 - i] = value % 10;
                         value /= 10;
                     }
@@ -505,15 +504,13 @@ bool chip8_handle_opcode(Chip8* chip, const u16 opcode) {
     return true;
 }
 
-void chip8_draw_sprite(Chip8* chip, const u8 x, const u8 y, const u8 n)
-{
+void chip8_draw_sprite(Chip8* chip, const u8 x, const u8 y, const u8 n) {
     bool pixel_flipped = false;
 
-    for (int row = 0; row < n; row++)
-    {
+    for (int row = 0; row < n; row++) {
+
         const u8 current_row = chip->memory[chip->I + row];
-        for (int col = 0; col < 8; col++)
-        {
+        for (int col = 0; col < 8; col++) {
             const bool current_pixel = (current_row >> (7 - col)) & 0x1;
 
             const size_t x_pos = (x + col) % CHIP8_DISPLAY_WIDTH;

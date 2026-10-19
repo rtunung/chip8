@@ -52,8 +52,7 @@ static void render_chip8_display(const Chip8* chip, SDL_Renderer* renderer) {
     }
 }
 
-int main(const int argc, char** argv)
-{
+int main(const int argc, char** argv) {
 
     // Setup SDL
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
@@ -92,11 +91,10 @@ int main(const int argc, char** argv)
     // Main Loop
     bool is_running = true;
     SDL_Event event;
-    while(is_running)
-    {
+    while(is_running) {
+
         // Handle Events
-        while(SDL_PollEvent(&event))
-        {
+        while(SDL_PollEvent(&event)) {
             if(event.type == SDL_EVENT_QUIT)
                 is_running = false;
         }
@@ -140,12 +138,9 @@ int main(const int argc, char** argv)
             cpu_accumulator -= cpu_period;
         }
 
-        // TODO handle audio
-
         render_chip8_display(chip, renderer);
 
         SDL_RenderPresent(renderer);
-
     }
 
     beep_destroy(beep);

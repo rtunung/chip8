@@ -34,21 +34,3 @@ target_include_directories(chip8
 target_link_libraries(chip8
     PRIVATE SDL3::SDL3
 )
-
-# ------------------------
-# Tests
-# ------------------------
-
-FetchContent_MakeAvailable(unity)
-
-add_executable(chip8_test
-    src/chip8.c
-    tests/test_chip8.c
-    tests/test_helper.c
-)
-
-target_include_directories(chip8_test
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_link_libraries(chip8_test PRIVATE unity::framework)

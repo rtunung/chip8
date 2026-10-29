@@ -52,6 +52,18 @@ static void render_chip8_display(const Chip8* chip, SDL_Renderer* renderer) {
     }
 }
 
+bool parse_args(int argc, char** argv, bool* debug, char** file_name) {
+    *debug = false;
+    *file_name = nullptr;
+
+    for(int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-d") == 0)
+            *debug = true;
+        else
+            *file_name = argv[i];
+    }
+}
+
 int main(const int argc, char** argv) {
 
     // Setup SDL
@@ -62,17 +74,23 @@ int main(const int argc, char** argv) {
     SDL_GetWindowSurface(window);
     SDL_UpdateWindowSurface(window);
 
-    Chip8_Debug_Enabled = true;
-
     // Setup Chip-8
     Chip8* chip = chip8_create();
     chip8_reset(chip);
 
-    if (argc >= 2)
-        if (!load_rom(argv[1], chip)) {
+    char* file_name = nullptr;
+    parse_args(argc, argv, &Chip8_Debug_Enabled, &file_name);
+
+    if (file_name != nullptr) {
+        if (!load_rom(file_name, chip)) {
             SDL_Quit();
             return 1;
         }
+    }
+    else {
+        printf("No file name specified.");
+        return 1;
+    }
 
     // Setup timers
     double cpu_accumulator = 0.0;

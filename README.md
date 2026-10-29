@@ -43,3 +43,5 @@ Once built, you can run the emulator from the `build` directory:
 ```bash
 ./chip8 <path_to_rom>
 ```
+
+Optionally, you can use the `-d` flag to print debug information (executed intructions) while running a rom.
